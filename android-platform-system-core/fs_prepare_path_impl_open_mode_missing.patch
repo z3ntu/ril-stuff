@@ -1,0 +1,17 @@
+Description: The invocation of open() misses a third argument
+ When open() is called with O_CREAT, a third argument must be provided for
+ setting the new file's access mode (permission). Let's pass the "mode"
+ parameter.
+Author: Kai-Chung Yan (殷啟聰)
+Last-Update: 2016-09-18
+--- a/libcutils/fs.c
++++ b/libcutils/fs.c
+@@ -79,7 +79,7 @@
+ create:
+     create_result = prepare_as_dir
+         ? TEMP_FAILURE_RETRY(mkdir(path, mode))
+-        : TEMP_FAILURE_RETRY(open(path, O_CREAT | O_CLOEXEC | O_NOFOLLOW | O_RDONLY));
++        : TEMP_FAILURE_RETRY(open(path, O_CREAT | O_CLOEXEC | O_NOFOLLOW | O_RDONLY, mode));
+     if (create_result == -1) {
+         if (errno != EEXIST) {
+             ALOGE("Failed to %s(%s): %s",

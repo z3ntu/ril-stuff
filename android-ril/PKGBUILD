@@ -1,0 +1,59 @@
+
+pkgname=android-ril
+pkgver=7.0.0_r34
+pkgrel=0
+pkgdesc="Android low-level utility library"
+url="https://github.com/android/platform_system_core"
+arch=('x86_64')
+license=("APACHE2")
+depends=("")
+makedepends=()
+source=(git+https://android.googlesource.com/platform/hardware/ril#tag=android-$pkgver
+        git+https://android.googlesource.com/platform/external/nanopb-c#tag=android-$pkgver
+        01_wake_lock_stub.patch
+        librilutils.mk
+        libril.mk
+        libprotobuf-c-nano.mk)
+sha512sums=('SKIP'
+            'SKIP'
+            '5d0d7e79fc0454bf627917a8c9acd801760145c320a082933619f3eeb3f30bd832db7cab7d68f86e3b4217373ee6919365449af78675aea5005c53bb80594c6a'
+            'bc8651165b3b696950ac6aeb52ec4665af9046c8029554604dabcc3795573306dacc9366f11395c2f1ad515930e705114b137998806a3f6b5a034a3d6176c48f'
+            '5dd7710949e8634ff0cc0e96c58cc1b27013985f90f85a515cb1377a07e397be6692a100c229dbdae3b05278df90eb6970e1910cf43bdb5680213fdda105a23d'
+            '30a48688e9bda64377d3f9e408bc457e4d1a7a68548b4ab8b28f2c2c2e731ada98345373232cb7dbd6483bb19293db6e5cac3e63f7ced6223a99b8dc7e0557f6')
+
+prepare() {
+    cp "$srcdir"/*.mk "$srcdir/ril/"
+    cp "$srcdir"/*.mk "$srcdir/nanopb-c/"
+
+    mkdir -p "$srcdir"/hardware/ril/librilutils/proto/
+    
+    cd "$srcdir"/ril
+    patch -Np1 < "$srcdir"/01_wake_lock_stub.patch
+}
+
+build() {
+    cd $srcdir/nanopb-c
+    make -f libprotobuf-c-nano.mk
+
+    cd $srcdir/ril
+    make -f librilutils.mk
+    
+    cp librilutils/proto/sap-api.pb.* "$srcdir"/hardware/ril/librilutils/proto/
+    
+    make -f libril.mk
+}
+
+package() {
+    # Library
+    install -Dm644 "$srcdir/ril/librilutils.so" \
+        "${pkgdir}/usr/lib/android/librilutils.so"
+
+    install -Dm644 "$srcdir/core/libcutils.so" \
+        "${pkgdir}/usr/lib/android/libcutils.so"
+
+    # Header files
+	mkdir -p "$pkgdir/usr/include/android/"
+	cp -r "$srcdir"/core/include/* \
+		"${pkgdir}/usr/include/android/"
+}
+

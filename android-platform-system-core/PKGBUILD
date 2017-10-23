@@ -1,0 +1,46 @@
+
+pkgname=android-platform-system-core
+pkgver=7.0.0_r34
+pkgrel=0
+pkgdesc="Android low-level utility library"
+url="https://github.com/android/platform_system_core"
+arch=('x86_64')
+license=("APACHE2")
+depends=("")
+makedepends=()
+source=(git+https://android.googlesource.com/platform/system/core#tag=android-$pkgver
+        liblog.mk
+        libcutils.mk
+        fs_prepare_path_impl_open_mode_missing.patch)
+sha512sums=('SKIP'
+            '38d17d9218b3c8688ab3973789fcf98a6eca5fd25e440b398aca7176968d873fd35cf0112c95edb67b6636595267370739637f236379b291d27fc0f91c90f0cb'
+            '0218ba5e7d71372b6b9216a56b9a593da188c1ab6aeb254f99992cbe643cd9a8aa1e9eebdfaa55496a4746bc8f434640d75b4dd81abba7cb9826188c75a2e444'
+            'b40247d88c50510450e2d2d71a2e3d942ec77c8f29ce004b50d7026dcc0c79f68b2faf72b31415b401718bf576bad83dccd8a1b2dd99c82c1b4a3d0aebbae7af')
+
+prepare() {
+    cp $srcdir/*.mk "$srcdir/core/"
+
+    cd $srcdir/core
+    patch -Np1 < $srcdir/fs_prepare_path_impl_open_mode_missing.patch
+}
+
+build() {
+	cd $srcdir/core
+    make -f liblog.mk
+    make -f libcutils.mk
+}
+
+package() {
+    # Library
+    install -Dm644 "$srcdir/core/liblog.so" \
+        "${pkgdir}/usr/lib/android/liblog.so"
+
+    install -Dm644 "$srcdir/core/libcutils.so" \
+        "${pkgdir}/usr/lib/android/libcutils.so"
+
+    # Header files
+	mkdir -p "$pkgdir/usr/include/android/"
+	cp -r "$srcdir"/core/include/* \
+		"${pkgdir}/usr/include/android/"
+}
+
